@@ -1,0 +1,53 @@
+[project]
+name = "r_u_sure"
+description = "Code for the paper 'R-U-SURE? Uncertainty-Aware Code Suggestions By Maximizing Utility Across Random User Intents'."
+readme = "README.md"
+requires-python = ">=3.9"
+license = {file = "LICENSE"}
+authors = [{name = "R-U-SURE authors", email="r_u_sure@google.com"}]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "License :: OSI Approved :: Apache Software License",
+    "Intended Audience :: Science/Research",
+]
+keywords = []
+
+# pip dependencies of the project
+dependencies = [
+    "absl-py>=1.4.0",
+    "numpy~=1.23",
+    "llvmlite~=0.39.1",
+    # Requires a patched version of numba, due to issues with namedtuple and closure support.
+    "numba @ git+https://github.com/danieldjohnson/numba.git@0.56.4-with-namedtuple-and-closure-fixes",
+]
+
+# This is set automatically by flit using `r_u_sure.__version__`
+dynamic = ["version"]
+
+[project.urls]
+homepage = "https://github.com/google-research/r_u_sure"
+repository = "https://github.com/google-research/r_u_sure"
+# Other: `documentation`, `changelog`
+
+[project.optional-dependencies]
+# Development deps (unittest, linting, formating,...)
+# Installed through `pip install .[dev]`
+dev = [
+    "pylint>=2.6.0",
+    "pyink>=23.1.0",
+    "matplotlib",
+    "ipython",
+    "jupyter",
+]
+
+[tool.pyink]
+# Formatting configuration to follow Google style-guide
+line-length = 80
+preview = true
+pyink-indentation = 2
+pyink-use-majority-quotes = true
+
+[build-system]
+requires = ["flit_core >=3.5,<4"]
+build-backend = "flit_core.buildapi"
