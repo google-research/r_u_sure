@@ -69,6 +69,10 @@ If you want to use the `r_u_sure` package from Python without modifying it, you
 can directly install it from GitHub using `pip`:
 
 ```
+# Optional: disable some unused numba features to prevent build errors
+export NUMBA_DISABLE_TBB=1
+export NUMBA_DISABLE_OPENMP=1
+
 pip install "r_u_sure @ git+https://github.com/google-research/r_u_sure"
 ```
 
@@ -93,11 +97,21 @@ cd r_u_sure
 Next, install it:
 
 ```
+# Optional: disable some unused numba features to prevent build errors
+export NUMBA_DISABLE_TBB=1
+export NUMBA_DISABLE_OPENMP=1
+
 pip install -e .
 ```
 
 Local edits to the source files will now be reflected properly in the python
 interpreter.
+
+(If you'd prefer, you can also omit the `export NUMBA_DISABLE_{X}=1` lines to
+compile those features into numba. Those features have additional dependencies;
+see the [Numba documentation][numba-opt-deps].)
+
+[numba-opt-deps]: https://numba.readthedocs.io/en/stable/user/installing.html#build-time-environment-variables-and-configuration-of-optional-components
 
 ### Running tests
 
