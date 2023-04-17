@@ -152,7 +152,8 @@ class PackedStateDAG(NamedTuple):
   num_tagged_states: int
   num_variable_keys: int
   num_variable_values: int
-  packed_edge_matrix: np.typing.NDArray[np.dtype[Any]]
+  # Actual dtype for `packed_edge_matrix` is NUMPY_EDGE_STRUCT_DTYPE
+  packed_edge_matrix: np.typing.NDArray[Any]
   edge_group_boundary_indices: np.typing.NDArray[np.int64]
   state_variable_boundary_indices: np.typing.NDArray[np.int64]
 
