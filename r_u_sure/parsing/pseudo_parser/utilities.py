@@ -351,3 +351,32 @@ def infer_truncation_with_fallbacks(
         splitters,
         cursor_position
         )
+
+
+def infer_truncation_pydocstring(
+    code: str,
+    cursor_position: int,
+) -> Union[int, None]:
+  """Returns the truncation index that immediately follows the next triple quote after that assumed to immediately precede cursor_position.
+
+  Args:
+    code: source code
+    cursor_position: index into source code where the prefix ends. the type of
+      triple quote is taken from the last three characters (singe or double
+      quotation marks).
+
+  Returns:
+    - index into code at which to truncate or None if there is no matching
+      triple quote.
+  """
+
+  triple_quotes = code[:cursor_position][-3:]
+  assert triple_quotes in ['"""', "'''"], f'{triple_quotes} not a triple quote'
+  if triple_quotes not in code[cursor_position:]:
+    return None
+  truncation_index = (
+      cursor_position +
+      code[cursor_position:].find(triple_quotes) +
+      len(triple_quotes))
+
+  return truncation_index

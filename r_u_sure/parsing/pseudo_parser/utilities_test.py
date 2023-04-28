@@ -234,6 +234,54 @@ class UtilitiesTest(parameterized.TestCase):
         code, cursor_position, language)
     self.assertEqual(truncation_position, expected_truncation_position)
 
+  @parameterized.named_parameters(
+      dict(
+          testcase_name='a',
+          code=textwrap.dedent("""
+            def f(x)
+              '''a docstring
+              with two lines'''
+              return x + 1
+            """[1:]),
+          expected_truncation=textwrap.dedent("""
+            def f(x)
+              '''a docstring
+              with two lines'''"""[1:])
+      ),
+      dict(
+          testcase_name='b',
+          code=textwrap.dedent('''
+            def f(x)
+              """a docstring
+              with two lines"""
+              return x + 1
+            '''[1:]),
+          expected_truncation=textwrap.dedent('''
+            def f(x)
+              """a docstring
+              with two lines"""'''[1:])
+      ),
+      dict(
+          testcase_name='c',
+          code=textwrap.dedent('''
+            def f(x)
+              """a docstring
+              not terminated
+            '''[1:]),
+          expected_truncation=textwrap.dedent('''
+            def f(x)
+              """a docstring
+              not terminated
+            '''[1:]),
+      ),)
+  def test_infer_truncation_pydocstring(
+      self, code: str,
+      expected_truncation: str):
+    cursor_position = utilities.find_python_function_docstrings(code)[0]
+    truncation_index = utilities.infer_truncation_pydocstring(
+        code, cursor_position)
+    self.assertEqual(code[:truncation_index], expected_truncation)
+
 
 if __name__ == '__main__':
   absltest.main()
