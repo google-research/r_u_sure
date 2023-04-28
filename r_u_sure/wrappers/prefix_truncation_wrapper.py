@@ -63,6 +63,18 @@ class PrefixByEditDistanceWrapper(
           0.7,
           0.9,
       ),
+      baseline_prefix_prob_thresholds: tuple[float, ...] = (
+          0.01,
+          0.02,
+          0.05,
+          0.1,
+          0.2,
+          0.3,
+          0.5,
+          0.7,
+          0.9,
+      ),
+      baseline_max_avg_log_prob: bool = True,
       baseline_intellicode: bool = True,
       baseline_max_characters: tuple[int, ...] = (20, 50, 100, 200, 500),
       baseline_max_lines: tuple[int, ...] = (1, 2, 4, 8, 16),
@@ -85,6 +97,10 @@ class PrefixByEditDistanceWrapper(
         = True` is set, since it only affects low-confidence regions.
       baseline_token_prob_thresholds: Token probability thresholds to use for
         baselines.
+      baseline_prefix_prob_thresholds: Prefix probability thresholds to use.
+      baseline_max_avg_log_prob: Whether to use a maximum-average-log-prob
+        heuristic, dividing log prob by sequence length and taking the maximum
+        cutoff.
       baseline_intellicode: Whether to use IntelliCode Compose heuristic with
         their recommended parameters.
       baseline_max_characters: Character length thresholds to use for baselines.
@@ -93,6 +109,8 @@ class PrefixByEditDistanceWrapper(
     """
     self._also_insert_uncertainty_regions = also_insert_uncertainty_regions
     self._baseline_token_prob_thresholds = baseline_token_prob_thresholds
+    self._baseline_prefix_prob_thresholds = baseline_prefix_prob_thresholds
+    self._baseline_max_avg_log_prob = baseline_max_avg_log_prob
     self._baseline_intellicode = baseline_intellicode
     self._baseline_max_characters = baseline_max_characters
     self._baseline_max_lines = baseline_max_lines
@@ -159,9 +177,22 @@ class PrefixByEditDistanceWrapper(
           )
       )
 
+    for prob_threshold in self._baseline_prefix_prob_thresholds:
+      results[f"prefix_prob_threshold_{prob_threshold}"] = (
+          baseline_builder.baseline_assignment_from_token_prob(
+              prob_threshold,
+              cumulative=True,
+          )
+      )
+
     if self._baseline_intellicode:
       results["intellicode"] = (
           baseline_builder.baseline_assignment_from_intellicode_compose()
+      )
+
+    if self._baseline_max_avg_log_prob:
+      results["max_avg_log_prob"] = (
+          baseline_builder.baseline_assignment_from_max_average_log_prob()
       )
 
     for character_length in self._baseline_max_characters:
@@ -281,6 +312,36 @@ class PrefixByEditDistanceBaselineBuilder:
 
     # Didn't find any early exit point.
     return self._assignment_from_exit_point(None)
+
+  def baseline_assignment_from_max_average_log_prob(
+      self,
+  ) -> dict[region_decisions.DecisionKey, region_decisions.DecisionValue]:
+    """Truncates at the position with the highest average log probability."""
+    current_log_prob = 0.0
+    current_token_count = 0
+
+    best_average_log_prob_at_exit_point = -math.inf
+    best_exit = None
+
+    for node_id in self.prototype.preorder_traversal:
+      if node_id.category == PackedSequenceNodeCategory.EARLY_EXIT_NODE:
+        if current_token_count > 0:
+          average_log_prob = current_log_prob / current_token_count
+          if average_log_prob > best_average_log_prob_at_exit_point:
+            best_average_log_prob_at_exit_point = average_log_prob
+            best_exit = node_id.preorder_index
+
+      elif node_id.category == PackedSequenceNodeCategory.TEXT_TOKEN_NODE:
+        token_node = self.prototype.text_token_nodes[node_id.index_in_category]
+        if token_node.text_contents:
+          node_log_prob = self.aligned_log_probs[node_id.preorder_index]
+          current_log_prob += node_log_prob
+          current_token_count += 1
+
+    if best_exit is not None:
+      return self._assignment_from_exit_point(best_exit)
+    else:
+      return self._assignment_from_exit_point(None)
 
   def baseline_assignment_from_intellicode_compose(
       self,

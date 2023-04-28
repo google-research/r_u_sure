@@ -53,8 +53,7 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
     # Generate some examples which differ in the middle but have parts that
     # align
     model_samples = [
-        textwrap.dedent(
-            """\
+        textwrap.dedent("""\
             def foo():
               shared_1()
               different_XXXX()
@@ -63,10 +62,8 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
 
             def different_1234():
               pass
-            """
-        ),
-        textwrap.dedent(
-            """\
+            """),
+        textwrap.dedent("""\
             def foo():
               shared_1()
               different_YYYY(1234)
@@ -75,10 +72,8 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
                 pass
 
             print("!")
-            """
-        ),
-        textwrap.dedent(
-            """\
+            """),
+        textwrap.dedent("""\
             def foo():
               shared_1()
               different_ZZZZ("a", "b", "c")
@@ -86,10 +81,8 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
               different_CCCC(2)
 
             # other stuff
-            """
-        ),
-        textwrap.dedent(
-            """\
+            """),
+        textwrap.dedent("""\
             def foo():
               shared_1()
               different_WWWW(42)
@@ -97,8 +90,7 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
               return different_DDDD
 
             # other stuff
-            """
-        ),
+            """),
     ]
     # pylint: enable=g-complex-comprehension
 
@@ -106,8 +98,7 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
     prototype_string = model_samples[0]
 
     # Ground truth is slightly different as well.
-    ground_truth = textwrap.dedent(
-        """\
+    ground_truth = textwrap.dedent("""\
         def foo():
           shared_1()
           different_ABCD(5, 4)
@@ -115,8 +106,7 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
           return 42
 
         # some other functions
-        """
-    )
+        """)
     # Pretend cursor is after `foo()`
     cursor_position = ground_truth.find('foo()') + len('foo()')
 
@@ -305,8 +295,7 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
         )
 
   def test_prefix_length_baselines(self):
-    prototype_string = textwrap.dedent(
-        """\
+    prototype_string = textwrap.dedent("""\
         print("context")
         def my_function(xxxx, yyyy):
           print(prob_80)
@@ -317,8 +306,7 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
           return prob_10
 
         print(prob_20)
-        """
-    )
+        """)
     # Pretend cursor is after `def`
     cursor_position = prototype_string.find('def') + len('def')
 
@@ -336,6 +324,8 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
         also_insert_uncertainty_regions=False,
         use_numba=False,
         baseline_token_prob_thresholds=(0.0, 0.3, 0.5, 0.7, 0.9),
+        baseline_prefix_prob_thresholds=(0.05, 0.1, 0.3, 0.5, 0.7),
+        baseline_max_avg_log_prob=True,
         baseline_intellicode=True,
         baseline_max_characters=(20, 50, 100, 200, 500),
         baseline_max_lines=(1, 2, 4, 8, 16),
@@ -462,6 +452,36 @@ class PrefixTruncationWrapperTest(parameterized.TestCase):
             )],
             'prob_threshold_0.9': [(
                 ' my_function(xxxx, yyyy):\n  print(',
+                'high',
+            )],
+            'max_avg_log_prob': [(' my_function', 'high')],
+            'prefix_prob_threshold_0.05': [(
+                (
+                    ' my_function(xxxx, yyyy):\n  print(prob_80)\n  prob_70()\n'
+                    '  prob_60()\n  prob_40()\n  print(prob_90)\n  return'
+                ),
+                'high',
+            )],
+            'prefix_prob_threshold_0.1': [(
+                (
+                    ' my_function(xxxx, yyyy):\n  print(prob_80)\n  prob_70()\n'
+                    '  prob_60()\n  prob_40()\n  print(prob_90)\n  return'
+                ),
+                'high',
+            )],
+            'prefix_prob_threshold_0.3': [(
+                (
+                    ' my_function(xxxx, yyyy):\n  print(prob_80)\n  prob_70()\n'
+                    '  prob_60()\n'
+                ),
+                'high',
+            )],
+            'prefix_prob_threshold_0.5': [(
+                ' my_function(xxxx, yyyy):\n  print(prob_80)\n  prob_70()\n',
+                'high',
+            )],
+            'prefix_prob_threshold_0.7': [(
+                ' my_function(xxxx, yyyy):\n  print(prob_80)\n',
                 'high',
             )],
         },
