@@ -1068,7 +1068,75 @@ def constrain_system(
         continue
 
       new_penalties = (
-          system.data.dag_tables[subproblem_index].penalties[variable_index, :]
+          system.data.dag_tables[subproblem_index].penalties[
+              sub_variable_index, :
+          ]
+          + penalty_vector / num_relevant
+      )
+      packed_dags.set_penalties(
+          memo=system.data.dag_tables[subproblem_index],
+          variable_index=sub_variable_index,
+          penalties=new_penalties,
+      )
+
+
+def break_symmetry_randomly(
+    system: DualDecompositionDiagramSystem,
+    noise_scale: float = 1.0,
+    random_seed: Optional[int] = None,
+) -> None:
+  """Breaks symmetry in a system.
+
+  Greedy decoding can get stuck if there are multiple optimal solutions, because
+  it does not propagate the constraints after each decision. This means it can
+  take a series of choices that each are part of some optimal solution but are
+  mutually incompatible with each other.
+
+  While this could in principle be fixed by backtracking, that's somewhat
+  complex to implement. Instead, we take advantage of the existing dual
+  decomposition marginal propagation logic. We assign random penalties to all
+  of the different possible variable assignments, then use dual decomposition
+  to propagate these throughout the system. This will hopefully mean that there
+  is a unique optimal solution that greedy decoding can find.
+
+  Args:
+    system: The system to constrain.
+    noise_scale: How much to perturb each decision's cost. If this is being
+      combined with a real cost function, the noise scale should be small enough
+      to not affect the overall original solution by much. (In practice, we can
+      probably expect the standard deviation of the actual perturbations to be
+      roughly proportional to the square root of the number of variables, times
+      this noise scale.)
+    random_seed: Optional random seed to ensure deterministic perturbations.
+  """
+  if random_seed is None:
+    rng = np.random.RandomState()
+  else:
+    rng = np.random.RandomState(seed=random_seed)
+
+  for variable_index in range(system.data.num_variable_keys):
+    penalty_vector = rng.uniform(
+        low=0.0, high=noise_scale, size=(system.data.num_variable_values,)
+    )
+    system.data.extra_unary_costs[variable_index, :] += penalty_vector
+
+    # Evenly divide the new penalty across relevant subproblems to maintain the
+    # invariant.
+    subprob_var_indices = system.data.dag_variable_index_map[variable_index, :]
+    num_relevant = 0
+    for subproblem_index, sub_variable_index in enumerate(subprob_var_indices):
+      if sub_variable_index != -1:
+        num_relevant += 1
+
+    for subproblem_index, sub_variable_index in enumerate(subprob_var_indices):
+      if sub_variable_index == -1:
+        # This variable doesn't participate in this subproblem.
+        continue
+
+      new_penalties = (
+          system.data.dag_tables[subproblem_index].penalties[
+              sub_variable_index, :
+          ]
           + penalty_vector / num_relevant
       )
       packed_dags.set_penalties(

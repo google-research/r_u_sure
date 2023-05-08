@@ -514,6 +514,88 @@ class ConsistentPathDualSolverTest(absltest.TestCase):
           greedy_forward_assignments, {"choice_0": 1, "choice_1": 0}
       )
 
+  def test_break_symmetry_randomly(self):
+    """Tests that we can break symmetry in random problems."""
+    # We construct a pair of subproblems such that all min marginals are zero,
+    # but if we choose the same value for choice_0 and choice_1, we get stuck
+    # in a contradiction at choice_2.
+    subproblem_a = gated_state_dag_test_lib.dag_from_paths([
+        ({"choice_0": 0, "choice_1": 0, "choice_2": 0}, 0.0),
+        ({"choice_0": 1, "choice_1": 1, "choice_2": 1}, 0.0),
+        ({"choice_0": 0, "choice_1": 1, "choice_2": 2}, 0.0),
+        ({"choice_0": 1, "choice_1": 0, "choice_2": 2}, 0.0),
+    ])
+    subproblem_b = gated_state_dag_test_lib.dag_from_paths([
+        ({"choice_0": 0, "choice_1": 0, "choice_2": 1}, 0.0),
+        ({"choice_0": 1, "choice_1": 1, "choice_2": 0}, 0.0),
+        ({"choice_0": 0, "choice_1": 1, "choice_2": 2}, 0.0),
+        ({"choice_0": 1, "choice_1": 0, "choice_2": 2}, 0.0),
+    ])
+
+    # Build a system.
+    system_parts = []
+    for subproblem in [subproblem_a, subproblem_b]:
+      subproblem = gated_state_dag.prune_to_reachable(subproblem)
+      packed, conversion_data = packed_dags.convert_dag_to_packed(
+          dag=subproblem,
+          missing_assignment_value=-1,
+          variable_value_ordering=[0, 1, 2],
+      )
+      system_parts.append((packed, conversion_data))
+
+    system = consistent_path_dual_solver.make_system(system_parts)
+
+    # Greedy decopding gets stuck, even after sweeping min marginals.
+    # (note: this fails because greedy decoding always chooses the same
+    # assignment under ties)
+    sweep_results = consistent_path_dual_solver.solve_system_with_sweeps(
+        system.data
+    )
+    with self.subTest("symmetry_not_broken_contradiction"):
+      # Sweep finds a cost of 0, which is actually optimal here.
+      self.assertEqual(sweep_results.objective_at_step[-1], 0.0)
+      # But greedy decoding can't extract this solution, and commits to the
+      # same value for choice 0 and choice 1.
+      (assignments, cost) = consistent_path_dual_solver.greedy_extract(
+          system.data,
+          direction=consistent_path_dual_solver.SweepDirection.FORWARD,
+      )
+      self.assertEqual(cost, np.inf)
+      assignments_dict = (
+          consistent_path_dual_solver.assignments_from_assignment_vector(
+              system, assignments
+          )
+      )
+      self.assertEqual(
+          assignments_dict["choice_0"], assignments_dict["choice_1"]
+      )
+
+    # Break symmetry.
+    consistent_path_dual_solver.break_symmetry_randomly(system, random_seed=42)
+
+    # Solve again.
+    sweep_results = consistent_path_dual_solver.solve_system_with_sweeps(
+        system.data
+    )
+    with self.subTest("symmetry_broken"):
+      self.assertLess(sweep_results.objective_at_step[-1], np.inf)
+      (assignments, cost) = consistent_path_dual_solver.greedy_extract(
+          system.data,
+          direction=consistent_path_dual_solver.SweepDirection.FORWARD,
+      )
+      # Should be tight
+      self.assertEqual(cost, sweep_results.objective_at_step[-1])
+      assignments_dict = (
+          consistent_path_dual_solver.assignments_from_assignment_vector(
+              system, assignments
+          )
+      )
+      # Should have avoided the contradiction by choosing different values for
+      # the two choices.
+      self.assertNotEqual(
+          assignments_dict["choice_0"], assignments_dict["choice_1"]
+      )
+
 
 if __name__ == "__main__":
   absltest.main()
