@@ -90,7 +90,7 @@ class EditDistanceWrapperBase(wrapper_base.HighLevelUtilityWrapper):
       self._constraint_dag_converter = lambda dag: dag
 
     self._construct_edit_dag = edit_dags.make_edit_dag_builder(
-        self._utility_config, with_numba=use_numba
+        with_numba=use_numba
     )
     self._construct_constraint_dag = (
         constraint_dags.make_constraint_dag_builder(with_numba=use_numba)
@@ -159,7 +159,9 @@ class EditDistanceWrapperBase(wrapper_base.HighLevelUtilityWrapper):
 
     # Edit dags
     for target, scale_factor in zip(targets, target_utility_scale_factors):
-      dag, _ = self._construct_edit_dag(prototype=prototype, target=target)
+      dag, _ = self._construct_edit_dag(
+          prototype=prototype, target=target, parameters=self._utility_config
+      )
       reachable_dag = self._prune_to_reachable(dag)
       packed_dag, conversion_data = self._pack_edit_dag(reachable_dag)
       packed_dag_scaled = packed_dags.scale_packed_dag_costs(

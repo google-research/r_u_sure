@@ -152,36 +152,6 @@ class TrustRegionUtilityParameters(NamedTuple):
   """Parameters for the distrust-region utility family.
 
   Attributes:
-    token_node_utility_fn: Function computing utilities for a token node.
-    low_confidence_region_cost: Extra cost for each low confidence region; this
-      can be used to encourage having fewer such regions.
-    high_confidence_start_editing_cost: Cost for starting to edit nodes in a
-      high-confidence region, independent of the number of nodes edited.
-    low_confidence_start_editing_cost: Cost for starting to edit nodes in a
-      low-confidence region, independent of the number of nodes edited.
-  """
-
-  token_node_utility_fn: Callable[
-      [packed_sequence_nodes.PackedTextTokenNode], UtilitiesAndCostsForNode
-  ]
-  low_confidence_region_cost: Cost
-  high_confidence_start_editing_cost: Cost
-  low_confidence_start_editing_cost: Cost
-
-
-def make_character_count_cost_config(
-    high_confidence_match_utility_per_char: Cost,
-    high_confidence_delete_cost_per_char: Cost,
-    low_confidence_match_utility_per_char: Cost,
-    low_confidence_delete_cost_per_char: Cost,
-    insert_cost_per_char: Cost,
-    low_confidence_region_cost: Cost,
-    high_confidence_start_editing_cost: Cost,
-    low_confidence_start_editing_cost: Cost,
-) -> TrustRegionUtilityParameters:
-  """Constructs a cost configuration based on character counts.
-
-  Args:
     high_confidence_match_utility_per_char: Per-character scaling term for
       high_confidence_match_utility.
     high_confidence_delete_cost_per_char: Per-character scaling term for
@@ -191,43 +161,45 @@ def make_character_count_cost_config(
     low_confidence_delete_cost_per_char: Per-character scaling term for
       low_confidence_delete_cost.
     insert_cost_per_char: Per-character scaling term for insert_cost.
-    low_confidence_region_cost: Extra penalty for each low confidence region.
-    high_confidence_start_editing_cost: Cost for starting to insert nodes in a
-      high-confidence region, independent of the number of nodes inserted.
-    low_confidence_start_editing_cost: Cost for starting to insert nodes in a
-      low-confidence region, independent of the number of nodes inserted.
-
-  Returns:
-    A configuration for the utility graph. All functions are registered as
-    numba jit-able.
+    low_confidence_region_cost: Extra cost for each low confidence region; this
+      can be used to encourage having fewer such regions.
+    high_confidence_start_editing_cost: Cost for starting to edit nodes in a
+      high-confidence region, independent of the number of nodes edited.
+    low_confidence_start_editing_cost: Cost for starting to edit nodes in a
+      low-confidence region, independent of the number of nodes edited.
   """
 
-  @numba.extending.register_jitable
-  def token_node_utility_fn(
-      token: packed_sequence_nodes.PackedTextTokenNode,
-  ) -> UtilitiesAndCostsForNode:
-    length = len(token.text_contents)
-    return UtilitiesAndCostsForNode(
-        high_confidence_match_utility=(
-            high_confidence_match_utility_per_char * length
-        ),
-        high_confidence_delete_cost=(
-            high_confidence_delete_cost_per_char * length
-        ),
-        low_confidence_match_utility=(
-            low_confidence_match_utility_per_char * length
-        ),
-        low_confidence_delete_cost=(
-            low_confidence_delete_cost_per_char * length
-        ),
-        insert_cost=(insert_cost_per_char * length),
-    )
+  high_confidence_match_utility_per_char: Cost
+  high_confidence_delete_cost_per_char: Cost
+  low_confidence_match_utility_per_char: Cost
+  low_confidence_delete_cost_per_char: Cost
+  insert_cost_per_char: Cost
+  low_confidence_region_cost: Cost
+  high_confidence_start_editing_cost: Cost
+  low_confidence_start_editing_cost: Cost
 
-  return TrustRegionUtilityParameters(
-      token_node_utility_fn=token_node_utility_fn,
-      low_confidence_region_cost=low_confidence_region_cost,
-      high_confidence_start_editing_cost=high_confidence_start_editing_cost,
-      low_confidence_start_editing_cost=low_confidence_start_editing_cost,
+
+@numba.extending.register_jitable
+def token_node_utility_from_parameters(
+    parameters: TrustRegionUtilityParameters,
+    token: packed_sequence_nodes.PackedTextTokenNode,
+) -> UtilitiesAndCostsForNode:
+  """Computes costs for an individual node based on parameters."""
+  length = len(token.text_contents)
+  return UtilitiesAndCostsForNode(
+      high_confidence_match_utility=(
+          parameters.high_confidence_match_utility_per_char * length
+      ),
+      high_confidence_delete_cost=(
+          parameters.high_confidence_delete_cost_per_char * length
+      ),
+      low_confidence_match_utility=(
+          parameters.low_confidence_match_utility_per_char * length
+      ),
+      low_confidence_delete_cost=(
+          parameters.low_confidence_delete_cost_per_char * length
+      ),
+      insert_cost=(parameters.insert_cost_per_char * length),
   )
 
 
@@ -483,36 +455,15 @@ def node_in_low_confidence_value(
 
 
 def make_edit_dag_builder(
-    parameters: TrustRegionUtilityParameters,
     with_numba: bool = False,
 ) -> Callable[..., tuple[gated_state_dag.CompleteStateDAG, EditDagRenderData],]:
   """Builds either Numba or pure python version of graph construction logic."""
-  # Numba gets confused about the type of our parameters tuple, since it
-  # contains functions. We can bypass this by just unpacking it here and
-  # closing over all the values separately.
-  low_confidence_region_cost = parameters.low_confidence_region_cost
-  token_node_utility_fn = parameters.token_node_utility_fn
-  high_confidence_start_editing_cost = (
-      parameters.high_confidence_start_editing_cost
-  )
-  low_confidence_start_editing_cost = (
-      parameters.low_confidence_start_editing_cost
-  )
-
   maybe_jit = numba.njit if with_numba else lambda fn: fn
-
-  # We will also be (ab)using ternary expressions (`X if Y else Z`) to add
-  # metadata when called from pure Python. The ternaries are only used to
-  # suspend evaluation of this metadata so that numba doesn't try to typecheck
-  # it. Semantically, it's just a wrapper around a single value, and the other
-  # value is always just None, so it's clearer to allow the ternary to be
-  # multiple lines.
-
-  # pylint: disable=g-long-ternary
 
   def construct_edit_dag(
       prototype: PackedSequenceNodeStorage,
       target: PackedSequenceNodeStorage,
+      parameters: TrustRegionUtilityParameters,
   ) -> tuple[gated_state_dag.CompleteStateDAG, EditDagRenderData]:
     """Constructs the edit DAG.
 
@@ -521,6 +472,7 @@ def make_edit_dag_builder(
         region nodes (but not early exit nodes).
       target: Node sequence representing a possible end state of the user's
         code, which should NOT include region nodes (or early exit nodes).
+      parameters: Parameters for the utility function.
 
     Returns:
       A graph and a set of subproblems for use in rendering later.
@@ -570,6 +522,7 @@ def make_edit_dag_builder(
         target_sequence_preorder_index=ROOT_PREORDER_INDEX,
         incomplete_graph=incomplete_graph,
         render_data=render_data,
+        parameters=parameters,
     )
 
     # If we didn't early exit, connect up to the final state.
@@ -594,6 +547,7 @@ def make_edit_dag_builder(
       prototype_sequence_preorder_index: int,
       incomplete_graph: gated_state_dag.PartialStateDAG,
       allow_insert: bool,
+      parameters: TrustRegionUtilityParameters,
   ):
     """Possibly inserts a node from the target, or skips a decoration.
 
@@ -610,6 +564,7 @@ def make_edit_dag_builder(
       allow_insert: If True, allows inserting groups and tokens. If False, only
         allows skipping past decoration nodes. (Inserting decoration nodes is
         allowed even if we haven't paid the edit penalty.)
+      parameters: Parameters for the utility function.
     """
     if target_node_id.category == PSNCategory.INVALID:
       return
@@ -675,7 +630,9 @@ def make_edit_dag_builder(
             EditDagStateConfidence.HIGH_CONFIDENCE,
             EditDagStateConfidence.LOW_CONFIDENCE,
         ):
-          node_utilities = token_node_utility_fn(target_node)
+          node_utilities = token_node_utility_from_parameters(
+              parameters, target_node
+          )
           gated_state_dag.partial_state_dag_add_edge(
               incomplete_graph,
               Edge(
@@ -737,6 +694,7 @@ def make_edit_dag_builder(
                 prototype_sequence_preorder_index
             ),
             incomplete_graph=incomplete_graph,
+            parameters=parameters,
         )
         # Connect back to this level.
         for confidence in (
@@ -777,6 +735,7 @@ def make_edit_dag_builder(
       target_sequence_preorder_index: int,
       incomplete_graph: gated_state_dag.PartialStateDAG,
       allow_delete: bool,
+      parameters: TrustRegionUtilityParameters,
   ):
     """Possibly deletes a node or advances in the prototype.
 
@@ -797,6 +756,7 @@ def make_edit_dag_builder(
       allow_delete: Whether to allow deleting tokens and groups from the
         prototype. If False, only allows advancing past control nodes and
         skipping decorations.
+      parameters: Parameters for the utility function.
     """
     if prototype_node_id.category == PSNCategory.INVALID:
       return
@@ -862,7 +822,9 @@ def make_edit_dag_builder(
             EditDagStateConfidence.HIGH_CONFIDENCE,
             EditDagStateConfidence.LOW_CONFIDENCE,
         ):
-          node_utilities = token_node_utility_fn(prototype_node)
+          node_utilities = token_node_utility_from_parameters(
+              parameters, prototype_node
+          )
           if confidence == EditDagStateConfidence.HIGH_CONFIDENCE:
             delete_cost = node_utilities.high_confidence_delete_cost
           else:
@@ -939,6 +901,7 @@ def make_edit_dag_builder(
             fixed_before_target_node=before_target_node,
             fixed_target_sequence_preorder_index=target_sequence_preorder_index,
             incomplete_graph=incomplete_graph,
+            parameters=parameters,
         )
         # Connect back to this level.
         for confidence in (
@@ -988,7 +951,7 @@ def make_edit_dag_builder(
           source_conf = EditDagStateConfidence.HIGH_CONFIDENCE
           dest_conf = EditDagStateConfidence.LOW_CONFIDENCE
           decision_value = DecisionValue.TRUE
-          cost = low_confidence_region_cost
+          cost = parameters.low_confidence_region_cost
           info = EditDagEdgeInfo(
               prototype_node_preorder_index=prototype_node_id.preorder_index,
               target_node_preorder_index=NO_PREORDER_INDEX,
@@ -1119,6 +1082,7 @@ def make_edit_dag_builder(
       target_sequence_preorder_index: int,
       incomplete_graph: gated_state_dag.PartialStateDAG,
       render_data: EditDagRenderData,
+      parameters: TrustRegionUtilityParameters,
   ) -> None:
     """Builds a subgraph matching two subsequences.
 
@@ -1173,6 +1137,7 @@ def make_edit_dag_builder(
       target_sequence_preorder_index: Identifier for this subsequence, as above.
       incomplete_graph: Graph that we should extend with this subgraph.
       render_data: Data for rendering.
+      parameters: Parameters for the utility function.
     """
     render_data.subproblem_list.append(
         EditDagSubproblem(
@@ -1232,6 +1197,7 @@ def make_edit_dag_builder(
             target_sequence_preorder_index=target_sequence_preorder_index,
             incomplete_graph=incomplete_graph,
             allow_delete=False,
+            parameters=parameters,
         )
 
         ##################################################################
@@ -1247,9 +1213,9 @@ def make_edit_dag_builder(
         ):
           # Can start editing for a penalty.
           if confidence == EditDagStateConfidence.HIGH_CONFIDENCE:
-            start_editing_cost = high_confidence_start_editing_cost
+            start_editing_cost = parameters.high_confidence_start_editing_cost
           else:
-            start_editing_cost = low_confidence_start_editing_cost
+            start_editing_cost = parameters.low_confidence_start_editing_cost
           gated_state_dag.partial_state_dag_add_edge(
               incomplete_graph,
               Edge(
@@ -1298,6 +1264,7 @@ def make_edit_dag_builder(
             target_sequence_preorder_index=target_sequence_preorder_index,
             incomplete_graph=incomplete_graph,
             allow_delete=True,
+            parameters=parameters,
         )
 
         ##################################################
@@ -1337,6 +1304,7 @@ def make_edit_dag_builder(
             prototype_sequence_preorder_index=prototype_sequence_preorder_index,
             incomplete_graph=incomplete_graph,
             allow_insert=True,
+            parameters=parameters,
         )
 
         ##############################################
@@ -1378,6 +1346,7 @@ def make_edit_dag_builder(
             prototype_sequence_preorder_index=prototype_sequence_preorder_index,
             incomplete_graph=incomplete_graph,
             allow_insert=False,  # only decorations allowed here!
+            parameters=parameters,
         )
 
         #####################################################
@@ -1404,7 +1373,9 @@ def make_edit_dag_builder(
                 EditDagStateConfidence.HIGH_CONFIDENCE,
                 EditDagStateConfidence.LOW_CONFIDENCE,
             ):
-              node_utilities = token_node_utility_fn(prototype_node)
+              node_utilities = token_node_utility_from_parameters(
+                  parameters, prototype_node
+              )
               if confidence == EditDagStateConfidence.HIGH_CONFIDENCE:
                 keep_utility = node_utilities.high_confidence_match_utility
               else:
@@ -1500,6 +1471,7 @@ def make_edit_dag_builder(
                 target_sequence_preorder_index=target_node_id.preorder_index,
                 incomplete_graph=incomplete_graph,
                 render_data=render_data,
+                parameters=parameters,
             )
             # Connect back to this level.
             for confidence in (
@@ -1547,6 +1519,7 @@ def make_edit_dag_builder(
       fixed_before_target_node: int,
       fixed_target_sequence_preorder_index: int,
       incomplete_graph: gated_state_dag.PartialStateDAG,
+      parameters: TrustRegionUtilityParameters,
   ) -> None:
     """Builds a subgraph recursively deleting all nodes in `prototype_node_ids`.
 
@@ -1599,6 +1572,7 @@ def make_edit_dag_builder(
         propagated through the states to disambiguate from other possible
         deletions, but isn't directly used otherwise.
       incomplete_graph: Graph that we should extend with this subgraph.
+      parameters: Parameters for the utility function.
     """
     for prototype_node_id in prototype_node_ids:
       maybe_delete_node_or_advance_in_prototype(
@@ -1609,6 +1583,7 @@ def make_edit_dag_builder(
           target_sequence_preorder_index=fixed_target_sequence_preorder_index,
           incomplete_graph=incomplete_graph,
           allow_delete=True,
+          parameters=parameters,
       )
 
   @maybe_jit
@@ -1618,6 +1593,7 @@ def make_edit_dag_builder(
       fixed_before_prototype_node: int,
       fixed_prototype_sequence_preorder_index: int,
       incomplete_graph: gated_state_dag.PartialStateDAG,
+      parameters: TrustRegionUtilityParameters,
   ) -> None:
     """Builds a subgraph recursively inserting all nodes in `target_node_ids`.
 
@@ -1670,6 +1646,7 @@ def make_edit_dag_builder(
         propagated through the states to disambiguate from other possible
         insertions, but isn't directly used otherwise.
       incomplete_graph: Graph that we should extend with this subgraph.
+      parameters: Parameters for the utility function.
     """
     for target_node_id in target_node_ids:
       maybe_insert_node_or_skip_decoration_in_target(
@@ -1682,9 +1659,8 @@ def make_edit_dag_builder(
           ),
           incomplete_graph=incomplete_graph,
           allow_insert=True,
+          parameters=parameters,
       )
-
-  # pylint: enable=g-long-ternary
 
   # Return the final builder function.
   return construct_edit_dag
@@ -1916,8 +1892,7 @@ def extract_edit_sequence_html(
   if style_override:
     style = style_override
   else:
-    style = textwrap.dedent(
-        """\
+    style = textwrap.dedent("""\
         <style>
         .edit_sequence_root {
             white-space: pre;
@@ -1952,8 +1927,7 @@ def extract_edit_sequence_html(
             color: red;
             font-weight: bold;
         }
-        </style>"""
-    )
+        </style>""")
   output_parts.append(style)
   output_parts.append('<span class="edit_sequence_root">')
   output_parts.append(f'<span class="prefix">{html.escape(prefix)}</span>')

@@ -42,7 +42,7 @@ def derive_uncertainty_region_costs(
     effective_precision: float,
     high_confidence_start_editing_cost: float,
     low_confidence_edit_sensitivity: float,
-) -> dict[str, float]:
+) -> edit_dags.TrustRegionUtilityParameters:
   """Computes parameters for UncertaintyRegionsWrapper based on precision.
 
   The UncertaintyRegionsWrapper is configured with on a base penalty for
@@ -75,8 +75,7 @@ def derive_uncertainty_region_costs(
       and low confidence regions. Values too close to 1 may be unstable.
 
   Returns:
-    Dictionary of parameters to be passed to
-    `edit_dags.make_character_count_cost_config`.
+    Parameters for a character-count utility.
   """
   # Consider a single token of length L in a proposed suggestion, which we can
   # optionally place in a low-confidence region. We will assume that insertion
@@ -190,7 +189,7 @@ def derive_uncertainty_region_costs(
   #   the only relevant terms are the per-character utility of matches and
   #   cost of deletions. (Essentially, this means we ignore discrete editing
   #   actions, and just try to identify mispredicted chars.)
-  return dict(
+  return edit_dags.TrustRegionUtilityParameters(
       high_confidence_match_utility_per_char=1.0,
       high_confidence_delete_cost_per_char=1.0,
       low_confidence_match_utility_per_char=low_conf_match_util,
@@ -250,9 +249,7 @@ class UncertaintyRegionsWrapper(
         low_confidence_edit_sensitivity,
     )
     super().__init__(
-        utility_config=edit_dags.make_character_count_cost_config(
-            **self._character_count_cost_config
-        ),
+        utility_config=self._character_count_cost_config,
         use_numba=use_numba,
     )
 

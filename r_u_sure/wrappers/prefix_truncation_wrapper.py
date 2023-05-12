@@ -17,7 +17,6 @@
 
 import math
 from typing import Any, Optional
-from r_u_sure.edit_distance_utility import edit_dags
 from r_u_sure.edit_distance_utility import region_decisions
 from r_u_sure.tree_structure import packed_sequence_nodes
 from r_u_sure.tree_structure import sequence_nodes
@@ -48,6 +47,7 @@ class PrefixByEditDistanceWrapper(
   relatively small so it may not be worthwhile. Similarly, some variable
   assignments are redundant.
   """
+
   show_start_editing_marker = False
 
   def __init__(
@@ -124,9 +124,7 @@ class PrefixByEditDistanceWrapper(
         )
     )
     super().__init__(
-        utility_config=edit_dags.make_character_count_cost_config(
-            **self._character_count_cost_config
-        ),
+        utility_config=self._character_count_cost_config,
         use_numba=use_numba,
     )
 
