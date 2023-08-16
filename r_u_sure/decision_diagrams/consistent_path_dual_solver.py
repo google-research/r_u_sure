@@ -195,7 +195,7 @@ def make_system(
 
   if isinstance(converted_dags[0][1].variable_keys, numba.typed.List):
     # Numba version of below logic.
-    key_type = converted_dags[0][1].variable_keys._numba_type_.item_type  # pylint: disable=protected-access
+    key_type = converted_dags[0][1].variable_keys._numba_type_.item_type  # pylint: disable=protected-access  # pytype: disable=attribute-error  # dataclass_transform
     variable_key_map = numba.typed.Dict.empty(key_type, numba.typeof(True))
     variable_keys = numba.typed.List.empty_list(key_type)
     for _, conversion_data in converted_dags:
