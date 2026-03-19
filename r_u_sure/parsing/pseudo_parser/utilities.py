@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2025 The R-U-SURE Authors.
+# Copyright 2026 The R-U-SURE Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -285,6 +285,8 @@ def infer_split_truncation_index(
         # update the index into ''.join(tokens_raw), i.e. the code
         code_index += len(tokens_raw[node.lo])
       if after_cursor:
+        if node.parent is None:
+          raise ValueError('node.parent is None')
         if (node.parent.annotation == 'split' and
             node.parent.children[-1] == node and
             tokens_raw[node.lo] in splitters):
