@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2025 The R-U-SURE Authors.
+# Copyright 2026 The R-U-SURE Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -352,7 +352,7 @@ class Node:
     return _copy(root)
 
   @classmethod
-  def depth_first_traversal(cls, root: Node) -> Iterable[Tuple[Node, int]]:
+  def depth_first_traversal(cls, root: Node) -> Iterable[Tuple[Node, int | None]]:
     """Traverses a tree depth first.
 
     Args:
@@ -454,12 +454,15 @@ def split_parse(
     if node.annotation == 'paired':
       assert len(node.children) == 3
       left, right = tokens[node.children[0].lo], tokens[node.children[-1].hi-1]
+      parent = node.parent
       if (left == sub_match_pair[0] and
           right == sub_match_pair[1] and
-          node.parent is not None and
-          node.parent.parent is not None):
-        grand_parent = node.parent.parent
-        new_child = node.parent
+          parent is not None and
+          parent.parent is not None):
+        grand_parent = parent.parent
+        new_child = parent
+        if grand_parent is None:
+          raise ValueError('grand_parent is None')
         new_parent = grand_parent.children[
             grand_parent.children.index(new_child)-1]
         if (new_child.annotation == 'split' and
@@ -599,6 +602,8 @@ def stack_based_bracket_match(tokens: List[Union[int, str]],
       # parent.parent is an opener node, i.e. as explained in the comment
       # above it will ultimately have three children. At present it two
       # children, left and middle. we will add the third (right) one below.
+      if parent.parent is None:
+        raise ValueError('parent.parent is None')
       assert len(parent.parent.children) == 2
       middle_node = parent.parent.children[1]
       # we now know the rhs of the range:
