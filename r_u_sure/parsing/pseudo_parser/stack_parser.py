@@ -1,5 +1,5 @@
 # coding=utf-8
-# Copyright 2025 The R-U-SURE Authors.
+# Copyright 2026 The R-U-SURE Authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -34,7 +34,7 @@ class ParseError(Exception):
   """
 
 
-def _unzip_pairs(list_of_pairs) -> ...:
+def _unzip_pairs(list_of_pairs):
   """Unzips a list of pairs.
 
   Args:
@@ -1135,4 +1135,3 @@ class PseudoParser:
           tokens_maybe_corrected_raw,
           (n_pre, n_post),
           )
-
