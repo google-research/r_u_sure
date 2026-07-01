@@ -294,7 +294,7 @@ class ApiCallSequenceWrapper(wrapper_base.HighLevelUtilityWrapper):
       if rewrite_states:
         self._scratch_table = np.full((2**25,), -1, dtype=np.int32)
         self._prune_to_reachable = functools.partial(
-            gated_state_dag.prune_unreachable_and_rewrite_states,
+            gated_state_dag.prune_unreachable_and_rewrite_states,  # pyrefly: ignore[bad-argument-type]
             scratch_table=self._scratch_table,
         )
       else:
@@ -571,7 +571,7 @@ class ApiCallSequenceWrapper(wrapper_base.HighLevelUtilityWrapper):
           packed_dag, conversion_data, assignments
       )
       system_cost = sum(edge.cost for edge in path)
-      result["total_cost"] = system_cost
+      result["total_cost"] = system_cost  # pyrefly: ignore[bad-assignment]
 
       # Count novel identifiers predicted correctly and incorrectly
       correct_novel = 0
@@ -615,7 +615,7 @@ class ApiCallSequenceWrapper(wrapper_base.HighLevelUtilityWrapper):
                 elif token_node.match_type == "ARGS":
                   deleted_args += 1
 
-      result.update({
+      result.update({  # pyrefly: ignore[no-matching-overload]
           "correct_novel": correct_novel,
           "correct_not_novel": correct_not_novel,
           "correct_args": correct_args,
@@ -636,7 +636,7 @@ class ApiCallSequenceWrapper(wrapper_base.HighLevelUtilityWrapper):
               all_packed_dags=all_packed_dags,
               conversion_datas=sample_system.conversion_data[:-1],
               assignments=assignments,
-              total_cost=result.get("total_cost"),
+              total_cost=result.get("total_cost"),  # pyrefly: ignore[bad-argument-type]
           )
       )
 

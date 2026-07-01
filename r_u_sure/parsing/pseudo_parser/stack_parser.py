@@ -121,7 +121,7 @@ class RegexCodec:
     for match in re.finditer(self.tok_regex, code, re.DOTALL):
       type_str = match.lastgroup
       token = match.group()
-      token_type = TokenType[type_str]
+      token_type = TokenType[type_str]  # pyrefly: ignore[bad-index]
       if token not in self.token_to_index:
         self.add_token(token, token_type)
       encoded_token = self.token_to_index[token]
@@ -243,7 +243,7 @@ class Node:
     if self.annotation == 'root':
       return NodeType.ROOT
     elif self.annotation == 'sibling':
-      content_str = self.text(tokens)
+      content_str = self.text(tokens)  # pyrefly: ignore[bad-argument-type]
       assert not self.children
       if not content_str:
         return NodeType.NON_CONTENT_LEAF
@@ -325,7 +325,7 @@ class Node:
     return ''.join(map(str, tokens[self.lo:self.hi]))
 
   def __len__(self) -> int:
-    return self.hi - self.lo
+    return self.hi - self.lo  # pyrefly: ignore[unsupported-operation]
 
   @classmethod
   def copy(cls, root: Node) -> Node:
@@ -419,7 +419,7 @@ def split_parse(
       assert len(node.children) == 3
       left = tokens[node.children[0].lo]
       if left in un_splittable_openers:
-        right = tokens[node.children[-1].hi-1]
+        right = tokens[node.children[-1].hi-1]  # pyrefly: ignore[unsupported-operation]
         if right == un_splittable_closers[un_splittable_openers.index(left)]:
           return
     # otherwise group children by splitters and put the groups under common
@@ -453,9 +453,9 @@ def split_parse(
     # function signature that precedes that block.
     if node.annotation == 'paired':
       assert len(node.children) == 3
-      left, right = tokens[node.children[0].lo], tokens[node.children[-1].hi-1]
-      if (left == sub_match_pair[0] and
-          right == sub_match_pair[1] and
+      left, right = tokens[node.children[0].lo], tokens[node.children[-1].hi-1]  # pyrefly: ignore[unsupported-operation]
+      if (left == sub_match_pair[0] and  # pyrefly: ignore[unsupported-operation]
+          right == sub_match_pair[1] and  # pyrefly: ignore[unsupported-operation]
           node.parent is not None and
           node.parent.parent is not None):
         grand_parent = node.parent.parent
@@ -599,17 +599,17 @@ def stack_based_bracket_match(tokens: List[Union[int, str]],
       # parent.parent is an opener node, i.e. as explained in the comment
       # above it will ultimately have three children. At present it two
       # children, left and middle. we will add the third (right) one below.
-      assert len(parent.parent.children) == 2
-      middle_node = parent.parent.children[1]
+      assert len(parent.parent.children) == 2  # pyrefly: ignore[missing-attribute]
+      middle_node = parent.parent.children[1]  # pyrefly: ignore[bad-index]
       # we now know the rhs of the range:
       middle_node.hi = i
       right_node = Node(lo=i, hi=i + 1, parent=parent.parent,
                         annotation='right')
-      parent.parent.children.append(right_node)
+      parent.parent.children.append(right_node)  # pyrefly: ignore[missing-attribute]
       # this rhs is one greater as it includes the closing token
-      parent.parent.hi = i + 1
+      parent.parent.hi = i + 1  # pyrefly: ignore[missing-attribute]
       opener_stack.pop()
-      parent = parent.parent.parent
+      parent = parent.parent.parent  # pyrefly: ignore[missing-attribute]
     elif plain_token or unprefixable_unmatched_closer:
       if unprefixable_unmatched_closer and not error_tolerant:
         raise ParseError('empty stack')
@@ -677,7 +677,7 @@ def error_correcting_prefix_and_suffix(
         info = 'NON-PREFIXABLE RIGHT : opener_stack {}'.format(
             repr(opener_stack))
     if verbose:
-      logging.info('i = %i token = %s : %s', i, str(token), info)
+      logging.info('i = %i token = %s : %s', i, str(token), info)  # pyrefly: ignore[unbound-name]
 
   error_correcting_suffix = [opener_to_closer[token] for token in opener_stack]
 
@@ -729,7 +729,7 @@ def python_indent_dedent_desugar(root: Node, tokens: List[str],
     for depth_one_node in root.children:
       if not first_node_of_line:
         first_node_of_line = depth_one_node
-      if encoded_tokens[depth_one_node.hi - 1] == newline_token:
+      if encoded_tokens[depth_one_node.hi - 1] == newline_token:  # pyrefly: ignore[unsupported-operation]
         yield slice(first_node_of_line.lo, depth_one_node.hi)
         first_node_of_line = None
     if first_node_of_line:
@@ -854,7 +854,7 @@ class PseudoParser:
 
     encoded_error_correcting_prefix, encoded_error_correcting_suffix = (
         error_correcting_prefix_and_suffix(
-            encoded_tokens, self.encoded_match_pairs))
+            encoded_tokens, self.encoded_match_pairs))  # pyrefly: ignore[bad-argument-type]
 
     if encoded_error_correcting_suffix and self.newline_terminate_correction:
       encoded_error_correcting_suffix.append(self.codec.encode('\n')[0][0])
@@ -867,7 +867,7 @@ class PseudoParser:
         encoded_tokens_maybe_corrected)
     tokens_maybe_corrected_raw = (
         [''] * len(encoded_error_correcting_prefix) +
-        self.codec.decode_token(encoded_tokens) +
+        self.codec.decode_token(encoded_tokens) +  # pyrefly: ignore[bad-argument-type]
         [''] * len(encoded_error_correcting_suffix)
     )
     tokens_types_maybe_corrected = self.codec.decode_type(
@@ -970,10 +970,10 @@ class PseudoParser:
     else:
       raise Exception('unknown language {}'.format(language))
 
-    return PseudoParser(match_pairs,
-                        split_tokens,
-                        un_splittable_match_pairs,
-                        split_types,
+    return PseudoParser(match_pairs,  # pyrefly: ignore[bad-argument-type]
+                        split_tokens,  # pyrefly: ignore[bad-argument-type]
+                        un_splittable_match_pairs,  # pyrefly: ignore[bad-argument-type]
+                        split_types,  # pyrefly: ignore[bad-argument-type]
                         codec,
                         newline_terminate_correction)
 
@@ -1048,21 +1048,21 @@ class PseudoParser:
           '', TokenType.PYTHON_DEDENT, non_unique=True)
 
       encoded_pre_tokens_maybe_corrected, _ = (
-          pre_pseudo_parser.codec.encode(''.join(pre_tokens_maybe_corrected)))
+          pre_pseudo_parser.codec.encode(''.join(pre_tokens_maybe_corrected)))  # pyrefly: ignore[no-matching-overload]
 
       encoded_desugared_tokens_maybe_corrected = python_indent_dedent_desugar(
           pre_pseudo_parsed,
-          pre_tokens_maybe_corrected,
+          pre_tokens_maybe_corrected,  # pyrefly: ignore[bad-argument-type]
           encoded_pre_tokens_maybe_corrected,
           indent_token,
           dedent_token,
           newline_token,
           spaces_per_indent)
       desugared_tokens_maybe_corrected = pre_pseudo_parser.codec.decode_token(
-          encoded_desugared_tokens_maybe_corrected)
+          encoded_desugared_tokens_maybe_corrected)  # pyrefly: ignore[bad-argument-type]
       desugared_tokens_types_maybe_corrected = (
           pre_pseudo_parser.codec.decode_type(
-              encoded_desugared_tokens_maybe_corrected))
+              encoded_desugared_tokens_maybe_corrected))  # pyrefly: ignore[bad-argument-type]
 
       def _get_raw_desugared_tokens(
           raw,
@@ -1098,7 +1098,7 @@ class PseudoParser:
           pre_pseudo_parser.encoded_un_splittable_match_pairs)
 
       encoded_parsed_unsplit = stack_based_bracket_match(
-          encoded_desugared_tokens_maybe_corrected,
+          encoded_desugared_tokens_maybe_corrected,  # pyrefly: ignore[bad-argument-type]
           encoded_match_pairs,
           error_tolerant=True)
 
@@ -1106,8 +1106,8 @@ class PseudoParser:
                                 len(encoded_desugared_tokens_maybe_corrected))
 
       encoded_parsed_split = split_parse(
-          encoded_parsed_unsplit, encoded_desugared_tokens_maybe_corrected,
-          encoded_splitters, encoded_un_splittable_match_pairs,
+          encoded_parsed_unsplit, encoded_desugared_tokens_maybe_corrected,  # pyrefly: ignore[bad-argument-type]
+          encoded_splitters, encoded_un_splittable_match_pairs,  # pyrefly: ignore[bad-argument-type]
           (indent_token, dedent_token))
 
       assert valid_parse_ranges(encoded_parsed_split,

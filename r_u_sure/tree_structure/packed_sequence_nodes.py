@@ -261,7 +261,7 @@ def pack(
         parents_and_offsets_from_preorder=numba.typed.List.empty_list(
             POSITION_IN_PARENT_NUMBA_TYPE
         ),
-        level_from_preorder=numba.typed.List.empty_list(numba.int64),
+        level_from_preorder=numba.typed.List.empty_list(numba.int64),  # pyrefly: ignore[missing-attribute]
         depth=-1,  # temporary placeholder value
     )
 

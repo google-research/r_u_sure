@@ -421,7 +421,7 @@ def make_selection_dag_builder(
                       advance_prototype=True,
                   ),
                   cost=0,
-                  required_assignment=required_assignment,
+                  required_assignment=required_assignment,  # pyrefly: ignore[unbound-name]
                   info=PartSelectionDagEdgeInfo(
                       category=DagStateCategory.SKIP_UNSELECTED_IN_PROTOTYPE,
                       prototype_node_preorder_index=(
@@ -796,7 +796,7 @@ def make_selection_dag_builder(
           required_assignment = None
           cost = 0.0
 
-        if can_advance_unmatched:
+        if can_advance_unmatched:  # pyrefly: ignore[unbound-name]
           gated_state_dag.partial_state_dag_add_edge(
               incomplete_graph,
               Edge(
@@ -1392,7 +1392,7 @@ class PartSelectionGraphAnnotator(dag_annotator.StateDAGAnnotator):
 
   def extra_annotations(self) -> Iterator[dag_annotator.RegionAnnotation]:
     """Produces region and text annotations."""
-    yield from self.text_annotations
+    yield from self.text_annotations  # pyrefly: ignore[invalid-yield]
 
   def renderer_specific_setup(self, renderer: rendering.Renderer) -> None:
     if isinstance(renderer, svg_renderer.SVGRenderer):

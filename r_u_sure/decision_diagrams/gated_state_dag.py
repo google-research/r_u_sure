@@ -348,7 +348,7 @@ def strip_traceback_from_edge(edge: Edge) -> Edge:
 @numba.njit
 def prune_unreachable_and_rewrite_states(
     dag: CompleteStateDAG,
-    scratch_table: np.NDArray[np.int32] = None,
+    scratch_table: np.NDArray[np.int32] = None,  # pyrefly: ignore[bad-function-definition]
 ) -> CompleteStateDAG:
   """Prunes unreachable edges and rewrite states to consecutive integers.
 

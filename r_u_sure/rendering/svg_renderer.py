@@ -190,7 +190,7 @@ class SVGRenderer(rendering.Renderer):
       horizontal_pad_offset = 0
 
     texts = []
-    base_x = point.x + horizontal_pad_offset
+    base_x = point.x + horizontal_pad_offset  # pyrefly: ignore[unbound-name]
     base_y = point.y + vertical_align_offset + vertical_pad_offset
     for i, line in enumerate(lines):
       texts.append(f"<text font-size={text_size} "

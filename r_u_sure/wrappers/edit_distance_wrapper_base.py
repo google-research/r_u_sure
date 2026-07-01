@@ -76,7 +76,7 @@ class EditDistanceWrapperBase(wrapper_base.HighLevelUtilityWrapper):
       if rewrite_states:
         self._scratch_table = np.full((2**25,), -1, dtype=np.int32)
         self._prune_to_reachable = functools.partial(
-            gated_state_dag.prune_unreachable_and_rewrite_states,
+            gated_state_dag.prune_unreachable_and_rewrite_states,  # pyrefly: ignore[bad-argument-type]
             scratch_table=self._scratch_table,
         )
       else:
@@ -220,12 +220,12 @@ class EditDistanceWrapperBase(wrapper_base.HighLevelUtilityWrapper):
           packed_dag, conversion_data, assignments
       )
       system_cost = sum(edge.cost for edge in path)
-      result["total_cost"] = system_cost
+      result["total_cost"] = system_cost  # pyrefly: ignore[bad-assignment]
 
       evaluation_summary_metrics = edit_dags.extract_edit_summary_metrics(
           path=path, prototype=prototype, target=evaluation_target
       )
-      result.update(evaluation_summary_metrics)
+      result.update(evaluation_summary_metrics)  # pyrefly: ignore[no-matching-overload]
 
     if sample_system is not None:
       # Assumption (based on `build_system` above): the system contains all of
@@ -239,7 +239,7 @@ class EditDistanceWrapperBase(wrapper_base.HighLevelUtilityWrapper):
               all_packed_dags=all_packed_dags,
               conversion_datas=sample_system.conversion_data[:-1],
               assignments=assignments,
-              total_cost=result.get("total_cost"),
+              total_cost=result.get("total_cost"),  # pyrefly: ignore[bad-argument-type]
           )
       )
 

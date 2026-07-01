@@ -1132,7 +1132,7 @@ class ConstraintDagGraphAnnotator(dag_annotator.StateDAGAnnotator):
       edge_info = edge.info
 
     # Override for early exit edges.
-    if edge_info is not None and edge_info.is_early_exit:
+    if edge_info is not None and edge_info.is_early_exit:  # pyrefly: ignore[missing-attribute]
       elbow_distance = 0
       elbow_distance_adjust = self.render_config.gap_horizontal * 0.2
       text_alignment = 0
@@ -1158,7 +1158,7 @@ class ConstraintDagGraphAnnotator(dag_annotator.StateDAGAnnotator):
 
   def extra_annotations(self) -> Iterable[dag_annotator.RegionAnnotation]:
     """Produces region and text annotations."""
-    yield from self.text_annotations
+    yield from self.text_annotations  # pyrefly: ignore[invalid-yield]
 
   def renderer_specific_setup(self, renderer: rendering.Renderer) -> None:
     if isinstance(renderer, svg_renderer.SVGRenderer):

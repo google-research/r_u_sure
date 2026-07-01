@@ -684,7 +684,7 @@ def solve_system_with_sweeps(
   steps_at_sweep = numba.typed.List()
   times_at_sweep = numba.typed.List()
 
-  with numba.objmode(base_time=numba.float64):
+  with numba.objmode(base_time=numba.float64):  # pyrefly: ignore[missing-attribute]
     # perf_counter must be called in pure-Python mode.
     base_time = time.perf_counter()
 
@@ -721,7 +721,7 @@ def solve_system_with_sweeps(
         step_count += 1
 
       # Sweep-level metadata.
-      with numba.objmode(stamp=numba.float64):
+      with numba.objmode(stamp=numba.float64):  # pyrefly: ignore[missing-attribute]
         # perf_counter must be called in pure-Python mode.
         stamp = time.perf_counter()
       objective_at_sweep.append(last_dual_bound)
