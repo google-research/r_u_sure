@@ -68,17 +68,17 @@ def pseudo_parse_node_to_nested_sequence_node(
   node_type = root.type(tokens, token_types)
   if node_type in decoration_node_types:
     # Output this node as a decoration node (regardless of if it has children)
-    return sequence_nodes.TextDecorationNode(root.text(tokens))
+    return sequence_nodes.TextDecorationNode(root.text(tokens))  # pyrefly: ignore[bad-argument-type]
   elif node_type in subtokenize_node_types:
     # Output this node as a group of subtokens (regardless of if it has
     # children)
     return sequence_nodes.GroupNode(
-        children=subtokenize_token(root.text(tokens)), match_type=node_type.name
+        children=subtokenize_token(root.text(tokens)), match_type=node_type.name  # pyrefly: ignore[bad-argument-type]
     )
   elif not root.children:
     # This is a leaf node (no children). Output it as a text token.
     return sequence_nodes.TextTokenNode(
-        root.text(tokens), match_type=node_type.name
+        root.text(tokens), match_type=node_type.name  # pyrefly: ignore[bad-argument-type]
     )
   else:
     # This node has children (and isn't a decoration or subtokenizeable).

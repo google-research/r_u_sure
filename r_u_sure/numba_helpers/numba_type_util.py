@@ -52,7 +52,7 @@ class PretendOptional:
 
 @numba.extending.typeof_impl.register(PretendOptional)
 def _typeof_impl_pretend_optional(boxed, context):  # pylint: disable=unused-argument
-  return numba.optional(numba.typeof(boxed.inner))
+  return numba.optional(numba.typeof(boxed.inner))  # pyrefly: ignore[missing-attribute]
 
 
 def as_numba_type(value: Any, numba_type: Any) -> Any:

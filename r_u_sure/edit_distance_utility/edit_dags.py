@@ -2007,7 +2007,7 @@ def extract_edit_summary_metrics(
 
       edit_action_name = edge.info.edit_action.name
       confidence_name = edge.info.confidence.name
-      result[f"{edit_action_name}_{confidence_name}_cost"] += edge.cost
+      result[f"{edit_action_name}_{confidence_name}_cost"] += edge.cost  # pyrefly: ignore[unsupported-operation]
       result[f"{edit_action_name}_{confidence_name}_chars"] += len(content)
       result[f"{edit_action_name}_{confidence_name}_edges"] += 1
 
@@ -2414,7 +2414,7 @@ class EditDagGraphAnnotator(dag_annotator.StateDAGAnnotator):
     else:
       edge_info = edge.info
     if edge_info is not None:
-      edit_action = edge_info.edit_action
+      edit_action = edge_info.edit_action  # pyrefly: ignore[missing-attribute]
       style_tags.append(edit_action.name)
     else:
       edit_action = None
@@ -2528,7 +2528,7 @@ class EditDagGraphAnnotator(dag_annotator.StateDAGAnnotator):
           )
       )
 
-    yield from self.text_annotations
+    yield from self.text_annotations  # pyrefly: ignore[invalid-yield]
 
   def renderer_specific_setup(self, renderer: rendering.Renderer) -> None:
     if isinstance(renderer, svg_renderer.SVGRenderer):

@@ -292,7 +292,7 @@ class DemoRunner:
       print(EMPTY_RESULT_MESSAGE)
     else:
       for i, cost in enumerate(
-          combine_result.solution_info["sample_system_costs_unsorted"]
+          combine_result.solution_info["sample_system_costs_unsorted"]  # pyrefly: ignore[unsupported-operation]
       ):
         utility = -cost
         print(f"Target {i}: {np.round(utility, decimals=6)}")
@@ -361,7 +361,7 @@ class DemoRunner:
           truncated_prototype, False
       )
       prototype_parts_with_log_probs = (
-          token_prob_align.flatten_token_log_probs_from_parsed(
+          token_prob_align.flatten_token_log_probs_from_parsed(  # pyrefly: ignore[bad-assignment]
               packed_prototype,
               token_prob_align.align_token_log_probs(
                   prototype_parts_with_log_probs,

@@ -124,7 +124,7 @@ class ParserHelper:
       root_sequence_node = (
           sequence_from_pseudo_parse.pseudo_parse_node_to_nested_sequence_node(
               pseudo_parsed,
-              raw_strings,
+              raw_strings,  # pyrefly: ignore[bad-argument-type]
               token_types_maybe_corrected,
               decoration_node_types={
                   stack_parser.NodeType.WHITE_SPACE_LEAF,

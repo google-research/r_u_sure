@@ -231,7 +231,7 @@ def render_dag(
       renderer.label_in_box(
           bounds=extra_annotation.bounds,
           text=extra_annotation.display_text,
-          hover_text=extra_annotation.hover_text,
+          hover_text=extra_annotation.hover_text,  # pyrefly: ignore[bad-argument-type]
           text_size=extra_annotation.text_size,
           style_tags=extra_annotation.style_tags + ("text-annotation",),
       )
@@ -248,7 +248,7 @@ def render_dag(
     renderer.label_in_box(
         bounds=state_annotation.bounds,
         text=state_annotation.display_text,
-        hover_text=state_annotation.hover_text,
+        hover_text=state_annotation.hover_text,  # pyrefly: ignore[bad-argument-type]
         text_size=state_annotation.text_size,
         style_tags=style_tags,
     )
@@ -281,7 +281,7 @@ def render_dag(
           required_assignment=edge.required_assignment,
           info=None,
       )
-      highlight = infoless_edge in emphasized_edges_set
+      highlight = infoless_edge in emphasized_edges_set  # pyrefly: ignore[unbound-name]
       lowlight = not highlight
     else:
       highlight = False

@@ -319,7 +319,7 @@ def truncate_prefix_at_offset(
         if past_start_point:
           yield node
         else:
-          offset_into_node = start_offset - prefix_chars_seen_so_far
+          offset_into_node = start_offset - prefix_chars_seen_so_far  # pyrefly: ignore[unsupported-operation]
           if offset_into_node < len(node.text_contents):
             # The start offset happens in this node!
             yield dataclasses.replace(
@@ -332,7 +332,7 @@ def truncate_prefix_at_offset(
             past_start_point = True
             prefix_chars_seen_so_far = None
           else:
-            prefix_chars_seen_so_far += len(node.text_contents)
+            prefix_chars_seen_so_far += len(node.text_contents)  # pyrefly: ignore[unsupported-operation]
 
       elif isinstance(
           node,

@@ -573,10 +573,10 @@ def make_specialized_fn__convert_dag_to_packed(
       # Update it in our dictionary, taking the largest seen so far, since we
       # know that anything we have seen so far is possible.
       if edge.dest not in largest_possible_before:
-        largest_possible_before[edge.dest] = update
+        largest_possible_before[edge.dest] = update  # pyrefly: ignore[unbound-name]
       else:
         largest_possible_before[edge.dest] = max(
-            largest_possible_before[edge.dest], update
+            largest_possible_before[edge.dest], update  # pyrefly: ignore[unbound-name]
         )
 
     # Next, we compute `largest_guaranteed_before`. For this, we use
@@ -864,7 +864,7 @@ def make_specialized_fn__convert_dag_to_packed(
     outgoing_edge_indices_for_tagged_state_index = new_list()
     for _ in range(len(tagged_states_in_table_order)):
       outgoing_edge_indices_for_tagged_state_index.append(
-          new_list_of(numba.int64)
+          new_list_of(numba.int64)  # pyrefly: ignore[missing-attribute]
       )
 
     for edge_index, edge in enumerate(tagged_edges_in_table_order):
@@ -1029,8 +1029,8 @@ class PenalizedShortestPrefixSuffixTables(NamedTuple):
   penalties: np.NDArray[np.float32]
   prefix_table: np.NDArray[np.float32]
   suffix_table: np.NDArray[np.float32]
-  prefixes_valid_ending_at_tag: np.NDArray[(), int]
-  suffixes_valid_starting_from_tag: np.NDArray[(), int]
+  prefixes_valid_ending_at_tag: np.NDArray[(), int]  # pyrefly: ignore[bad-specialization, not-a-type]
+  suffixes_valid_starting_from_tag: np.NDArray[(), int]  # pyrefly: ignore[bad-specialization, not-a-type]
 
 
 @numba.extending.register_jitable
@@ -1098,7 +1098,7 @@ def masked_prefixes(
   # the ones tagged with larger variables.
   bad_from = state_tag_end_boundary(memo.dag, memo.prefixes_valid_ending_at_tag)
   result[bad_from:] = INVALID_COST
-  return result
+  return result  # pyrefly: ignore[bad-return]
 
 
 @numba.extending.register_jitable

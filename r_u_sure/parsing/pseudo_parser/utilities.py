@@ -50,8 +50,8 @@ def infer_python_spaces_per_indent(
         previous_token_type in (
             stack_parser.TokenType.PYTHON_INDENT,
             stack_parser.TokenType.PYTHON_DEDENT) and
-        len(token_raw)):
-      indent_lengths.append(len(token_raw))
+        len(token_raw)):  # pyrefly: ignore[bad-argument-type]
+      indent_lengths.append(len(token_raw))  # pyrefly: ignore[bad-argument-type]
 
   if not indent_lengths:
     return 1
@@ -94,11 +94,11 @@ def find_python_function_docstrings(python_code: str) -> Iterable[int]:
 
   def node_code_fragment(node: stack_parser.Node) -> str:
     """Returns the code corresponding to node."""
-    return ''.join(tokens_maybe_corrected_raw[node.lo:node.hi])
+    return ''.join(tokens_maybe_corrected_raw[node.lo:node.hi])  # pyrefly: ignore[no-matching-overload]
 
   def range_code(hi: int) -> str:
     """Returns the code up to and including token number hi."""
-    return ''.join(tokens_maybe_corrected_raw[:hi])
+    return ''.join(tokens_maybe_corrected_raw[:hi])  # pyrefly: ignore[no-matching-overload]
 
   def leading_indents(code_fragment: str) -> int:
     """Counts the number of inferred_indent_length sized leading whitespaces."""
@@ -285,9 +285,9 @@ def infer_split_truncation_index(
         # update the index into ''.join(tokens_raw), i.e. the code
         code_index += len(tokens_raw[node.lo])
       if after_cursor:
-        if (node.parent.annotation == 'split' and
-            node.parent.children[-1] == node and
-            tokens_raw[node.lo] in splitters):
+        if (node.parent.annotation == 'split' and  # pyrefly: ignore[missing-attribute]
+            node.parent.children[-1] == node and  # pyrefly: ignore[missing-attribute]
+            tokens_raw[node.lo] in splitters):  # pyrefly: ignore[not-iterable]
           # we found the split immediately proceeding the cursor
           return code_index
 
@@ -330,13 +330,13 @@ def infer_truncation_with_fallbacks(
       stack_parser.PseudoParser.parse_and_maybe_preprocess(
           language=language,
           code=code,
-          spaces_per_indent=spaces_per_indent,
+          spaces_per_indent=spaces_per_indent,  # pyrefly: ignore[bad-argument-type]
           )
       )
 
   truncation_index = infer_match_pair_truncation_index(
       root,
-      tokens_raw,
+      tokens_raw,  # pyrefly: ignore[bad-argument-type]
       token_types,
       match_pair,
       cursor_position,
@@ -347,7 +347,7 @@ def infer_truncation_with_fallbacks(
   else:
     return infer_split_truncation_index(
         root,
-        tokens_raw,
+        tokens_raw,  # pyrefly: ignore[bad-argument-type]
         splitters,
         cursor_position
         )
