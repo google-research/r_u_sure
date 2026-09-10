@@ -287,7 +287,7 @@ def infer_split_truncation_index(
       if after_cursor:
         if (node.parent.annotation == 'split' and  # pyrefly: ignore[missing-attribute]
             node.parent.children[-1] == node and  # pyrefly: ignore[missing-attribute]
-            tokens_raw[node.lo] in splitters):  # pyrefly: ignore[not-iterable]
+            (splitters is None or tokens_raw[node.lo] in splitters)):
           # we found the split immediately proceeding the cursor
           return code_index
 
