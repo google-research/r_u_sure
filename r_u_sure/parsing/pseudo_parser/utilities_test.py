@@ -20,6 +20,7 @@ from typing import Optional
 
 from absl.testing import absltest
 from absl.testing import parameterized
+from r_u_sure.parsing.pseudo_parser import stack_parser
 from r_u_sure.parsing.pseudo_parser import utilities
 
 
@@ -281,6 +282,57 @@ class UtilitiesTest(parameterized.TestCase):
     truncation_index = utilities.infer_truncation_pydocstring(
         code, cursor_position)
     self.assertEqual(code[:truncation_index], expected_truncation)
+
+
+
+class UnrestrictedSplitTruncationTest(parameterized.TestCase):
+
+  @parameterized.named_parameters(
+      ('python', 'python', 'first = 1\nsecond = 2\n', 'first = 1\n'),
+      (
+          'python_brackets',
+          'python',
+          'first = [1,\n2]\nnext = 3\n',
+          'first = [1,\n2]\n',
+      ),
+      ('cpp', 'cpp', 'first(); second();', 'first();'),
+      ('java', 'java', 'first(); second();', 'first();'),
+      ('javascript', 'javascript', 'first(); second();', 'first();'),
+      (
+          'cpp_comment',
+          'cpp',
+          'first /* note */ = 1; next();',
+          'first /* note */',
+      ),
+  )
+  def test_none_accepts_any_parser_split(self, language, code, prefix):
+    root, _, _, tokens, _ = (
+        stack_parser.PseudoParser.parse_and_maybe_preprocess(language, code)
+    )
+    index = utilities.infer_split_truncation_index(root, tokens, None, 0)
+    self.assertEqual(code[:index], prefix)
+
+  @parameterized.named_parameters(
+      ('semicolon', (';',), 'first /* note */ = 1;'),
+      ('empty_filter', (), 'first /* note */ = 1; next();'),
+  )
+  def test_explicit_filter_is_preserved(self, splitters, prefix):
+    code = 'first /* note */ = 1; next();'
+    root, _, _, tokens, _ = (
+        stack_parser.PseudoParser.parse_and_maybe_preprocess('cpp', code)
+    )
+    index = utilities.infer_split_truncation_index(root, tokens, splitters, 0)
+    self.assertEqual(code[:index], prefix)
+
+  @parameterized.parameters('', 'first();')
+  def test_end_of_input(self, code):
+    root, _, _, tokens, _ = (
+        stack_parser.PseudoParser.parse_and_maybe_preprocess('cpp', code)
+    )
+    index = utilities.infer_split_truncation_index(
+        root, tokens, None, len(code)
+    )
+    self.assertEqual(index, len(code))
 
 
 if __name__ == '__main__':
