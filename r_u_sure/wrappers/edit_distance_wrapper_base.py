@@ -76,7 +76,7 @@ class EditDistanceWrapperBase(wrapper_base.HighLevelUtilityWrapper):
       if rewrite_states:
         self._scratch_table = np.full((2**25,), -1, dtype=np.int32)
         self._prune_to_reachable = functools.partial(
-            gated_state_dag.prune_unreachable_and_rewrite_states,  # pyrefly: ignore[bad-argument-type]
+            gated_state_dag.prune_unreachable_and_rewrite_states,
             scratch_table=self._scratch_table,
         )
       else:

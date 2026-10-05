@@ -152,7 +152,7 @@ class ApiCallSequenceWrapper(wrapper_base.HighLevelUtilityWrapper):
       reverse_outs.append(sequence_nodes.RegionEndNode())
       reverse_outs.append(sequence_nodes.TextTokenNode(")", "END_CALL"))
       args_text = sequence_node_helpers.render_text_contents(
-          candidate[-1].children[1]  # pytype: disable=attribute-error
+          candidate[-1].children[1]
       )
       if args_text:
         reverse_outs.append(sequence_nodes.TextTokenNode(args_text, "ARGS"))
@@ -294,7 +294,7 @@ class ApiCallSequenceWrapper(wrapper_base.HighLevelUtilityWrapper):
       if rewrite_states:
         self._scratch_table = np.full((2**25,), -1, dtype=np.int32)
         self._prune_to_reachable = functools.partial(
-            gated_state_dag.prune_unreachable_and_rewrite_states,  # pyrefly: ignore[bad-argument-type]
+            gated_state_dag.prune_unreachable_and_rewrite_states,
             scratch_table=self._scratch_table,
         )
       else:

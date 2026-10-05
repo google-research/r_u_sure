@@ -864,7 +864,7 @@ def make_specialized_fn__convert_dag_to_packed(
     outgoing_edge_indices_for_tagged_state_index = new_list()
     for _ in range(len(tagged_states_in_table_order)):
       outgoing_edge_indices_for_tagged_state_index.append(
-          new_list_of(numba.int64)  # pyrefly: ignore[missing-attribute]
+          new_list_of(numba.int64)
       )
 
     for edge_index, edge in enumerate(tagged_edges_in_table_order):

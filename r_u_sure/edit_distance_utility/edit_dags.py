@@ -424,13 +424,12 @@ EXAMPLE_SUBPROBLEM = EditDagSubproblem(
 )
 
 STATE_NUMBA_TYPE = numba.typeof(EXAMPLE_STATE)
-# pytype: disable=wrong-arg-types
 EDGE_NUMBA_TYPE = numba.typeof(
     Edge(
         source=EXAMPLE_STATE,
         dest=EXAMPLE_STATE,
         cost=0.0,
-        required_assignment=numba_type_util.PretendOptional(
+        required_assignment=numba_type_util.PretendOptional(  # pyrefly: ignore[bad-argument-type]
             SharedVariableAssignment(
                 key=EXAMPLE_VARIABLE_KEY,
                 value=DecisionValue.NOT_APPLICABLE,
@@ -439,7 +438,6 @@ EDGE_NUMBA_TYPE = numba.typeof(
         info=EXAMPLE_EDGE_INFO,
     )
 )
-# pytype: enable=wrong-arg-types
 SUBPROBLEM_NUMBA_TYPE = numba.typeof(EXAMPLE_SUBPROBLEM)
 
 
@@ -1719,7 +1717,7 @@ def make_specialized_dag_packer(
         variable_value_ordering=numba.typed.List(variable_value_ordering),
     )
 
-  return packer, graph_converter  # pytype: disable=bad-return-type
+  return packer, graph_converter  # pyrefly: ignore[bad-return]
 
 
 ################################################################################

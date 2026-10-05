@@ -195,7 +195,7 @@ def make_system(
 
   if isinstance(converted_dags[0][1].variable_keys, numba.typed.List):
     # Numba version of below logic.
-    key_type = converted_dags[0][1].variable_keys._numba_type_.item_type  # pylint: disable=protected-access  # pytype: disable=attribute-error  # dataclass_transform
+    key_type = converted_dags[0][1].variable_keys._numba_type_.item_type  # pylint: disable=protected-access
     variable_key_map = numba.typed.Dict.empty(key_type, numba.typeof(True))
     variable_keys = numba.typed.List.empty_list(key_type)
     for _, conversion_data in converted_dags:
@@ -319,7 +319,7 @@ def _clone_memos(
   result_list = numba.typed.List()
   for memo in memos:
     result_list.append(packed_dags.copy_memo(memo))
-  return result_list  # pytype: disable=bad-return-type
+  return result_list
 
 
 @numba.njit
@@ -684,7 +684,7 @@ def solve_system_with_sweeps(
   steps_at_sweep = numba.typed.List()
   times_at_sweep = numba.typed.List()
 
-  with numba.objmode(base_time=numba.float64):  # pyrefly: ignore[missing-attribute]
+  with numba.objmode(base_time=numba.float64):
     # perf_counter must be called in pure-Python mode.
     base_time = time.perf_counter()
 
@@ -721,7 +721,7 @@ def solve_system_with_sweeps(
         step_count += 1
 
       # Sweep-level metadata.
-      with numba.objmode(stamp=numba.float64):  # pyrefly: ignore[missing-attribute]
+      with numba.objmode(stamp=numba.float64):
         # perf_counter must be called in pure-Python mode.
         stamp = time.perf_counter()
       objective_at_sweep.append(last_dual_bound)

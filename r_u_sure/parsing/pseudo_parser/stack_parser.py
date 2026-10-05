@@ -740,7 +740,7 @@ def python_indent_dedent_desugar(root: Node, tokens: List[str],
     line_string = ''.join(tokens[line_slice])
     if ALL_WHITE_SPACE_REGEX.match(line_string):
       return None
-    leading_white_space = LEADING_WHITE_SPACE_REGEX.match(line_string).group(0)  # pytype: disable=attribute-error  # re-none
+    leading_white_space = LEADING_WHITE_SPACE_REGEX.match(line_string).group(0)  # pyrefly: ignore[missing-attribute]
     n_spaces = len(leading_white_space)
     return n_spaces // spaces_per_indent
 
